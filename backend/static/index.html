@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Processing Demo</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="tabs">
+        <button class="tab-button" onclick="openTab(event, 'text')">Text</button>
+        <button class="tab-button" onclick="openTab(event, 'audio')">Audio</button>
+        <button class="tab-button" onclick="openTab(event, 'image')">Image</button>
+        <button class="tab-button" onclick="openTab(event, '3d')">3D</button>
+    </div>
+
+    <div id="text" class="tab-content">
+        <h2>Text Preprocessing</h2>
+        <label for="dataset-select">Select Dataset:</label>
+        <select id="dataset-select" onchange="fetchSample()">
+            <!-- Options will be populated dynamically -->
+        </select>
+        <div id="sample-text" class="sample-text"></div>
+        <div id="preprocessing-options">
+            <button onclick="tokenizeText()">Tokenize</button>
+            <button onclick="padText()">Pad</button>
+            <button onclick="embedText()">Embed</button>
+        </div>
+        <div id="augmentation-options">
+            <button onclick="synonymReplacement()">Synonym Replacement</button>
+            <button onclick="randomInsertion()">Random Insertion</button>
+        </div>
+        <div id="result"></div>
+    </div>
+
+    <div id="audio" class="tab-content">
+        <h2>Audio Preprocessing</h2>
+        <!-- Audio preprocessing content goes here -->
+    </div>
+
+    <div id="image" class="tab-content">
+        <h2>Image Preprocessing</h2>
+        <!-- Image preprocessing content goes here -->
+    </div>
+
+    <div id="3d" class="tab-content">
+        <h2>3D Preprocessing</h2>
+        <!-- 3D preprocessing content goes here -->
+    </div>
+
+    <script src="scripts.js"></script>
+</body>
+</html>
