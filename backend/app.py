@@ -4,12 +4,14 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 import torchtext
+import torchtext.data
 from torchtext.data.utils import get_tokenizer
 import torchtext.datasets
 from torchtext.vocab import GloVe
 import nltk
 import random
-from nltk.corpus import wordnet
+from nltk.corpus import wordnet, stopwords
+from functools import lru_cache
 
 app = FastAPI()
 
@@ -32,11 +34,13 @@ class DatasetRequest(BaseModel):
 datasets = {
     "AG_NEWS": torchtext.datasets.AG_NEWS,
     "IMDB": torchtext.datasets.IMDB,
+    "CoLA": torchtext.datasets.CoLA,
     # Add more datasets as needed
 }
 
 tokenizer = get_tokenizer("basic_english")
 glove = GloVe(name="6B", dim=100)
+stop_words = set(stopwords.words('english'))
 
 logging.basicConfig(level=logging.INFO)
 
@@ -50,18 +54,25 @@ def fetch_sample(request: DatasetRequest):
     logging.info(f"Fetching sample for dataset: {request.dataset}")
     if request.dataset not in datasets:
         raise HTTPException(status_code=404, detail="Dataset not found")
-    dataset_iter = datasets[request.dataset](split='train')
-    sample = next(iter(dataset_iter))
-    return {"text": sample[1]}
+    sample_set = samples_from_ds(request.dataset)
+    return {"text": sample_set[random.randint(0, 99)][1]}
+
+@lru_cache(maxsize=10, typed=False)
+def samples_from_ds(dataset: str):
+    dataset_iter = iter(datasets[dataset](split='train'))
+    sample_set = []
+    for _ in range(100):
+        sample_set.append(next(dataset_iter))
+    return sample_set
 
 @app.post("/preprocess")
 def preprocess_text(request: TextRequest):
     logging.info(f"Preprocessing text with option: {request.dataset}")
     tokens = tokenizer(request.text)
     if request.dataset == "tokenize":
-        processed_text = " ".join(tokens)
+        processed_text = " ".join([f"[{token}]" for token in tokens])
     elif request.dataset == "pad":
-        max_length = 1000  # Example padding length
+        max_length = 300  # Example padding length
         padded_tokens = tokens + ["<pad>"] * (max_length - len(tokens))
         processed_text = " ".join(padded_tokens[:max_length])
     elif request.dataset == "embed":
@@ -89,13 +100,21 @@ def get_index():
 
 def synonym_replacement(text):
     words = text.split()
-    for _ in range(10):
-        word_to_replace = random.choice(words)
-        synonyms = wordnet.synsets(word_to_replace)
+    new_words = []
+    for word in words:
+        if word.lower() in stop_words or not wordnet.synsets(word):
+            new_words.append(word)
+            continue
+        synonyms = wordnet.synsets(word)
         if synonyms:
             synonym = synonyms[0].lemmas()[0].name()
-            words = [synonym if word == word_to_replace else word for word in words]
-    return " ".join(words)
+            if synonym != word:
+                new_words.append(synonym)
+            else:
+                new_words.append(word)
+        else:
+            new_words.append(word)
+    return " ".join(new_words)
 
 def random_insertion(text):
     # Dummy implementation for random insertion
