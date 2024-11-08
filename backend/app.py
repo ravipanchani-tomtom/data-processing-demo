@@ -7,6 +7,8 @@ import torchtext
 from torchtext.data.utils import get_tokenizer
 import torchtext.datasets
 from torchtext.vocab import GloVe
+import nltk
+from nltk.corpus import wordnet
 
 app = FastAPI()
 
@@ -58,7 +60,7 @@ def preprocess_text(request: TextRequest):
     if request.dataset == "tokenize":
         processed_text = " ".join(tokens)
     elif request.dataset == "pad":
-        max_length = 10  # Example padding length
+        max_length = 1000  # Example padding length
         padded_tokens = tokens + ["<pad>"] * (max_length - len(tokens))
         processed_text = " ".join(padded_tokens[:max_length])
     elif request.dataset == "embed":
@@ -66,6 +68,7 @@ def preprocess_text(request: TextRequest):
         processed_text = str(embedded_tokens)
     else:
         raise HTTPException(status_code=400, detail="Invalid preprocessing option")
+    return TextResponse(original_text=request.text, processed_text=processed_text)
 
 @app.post("/augment")
 def augment_text(request: TextRequest):
@@ -84,14 +87,18 @@ def get_index():
         return f.read()
 
 def synonym_replacement(text):
-    # Dummy implementation for synonym replacement
     words = text.split()
-    if "example" in words:
-        words[words.index("example")] = "sample"
-    return " ".join(words)
+    new_words = []
+    for word in words:
+        synonyms = wordnet.synsets(word)
+        if synonyms:
+            synonym = synonyms[0].lemmas()[0].name()
+            new_words.append(synonym)
+        else:
+            new_words.append(word)
+    return " ".join(new_words)
 
 def random_insertion(text):
-    return text + " random"
     # Dummy implementation for random insertion
     words = text.split()
     words.insert(len(words) // 2, "random")
