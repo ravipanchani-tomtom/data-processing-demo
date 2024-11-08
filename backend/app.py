@@ -8,6 +8,7 @@ from torchtext.data.utils import get_tokenizer
 import torchtext.datasets
 from torchtext.vocab import GloVe
 import nltk
+import random
 from nltk.corpus import wordnet
 
 app = FastAPI()
@@ -88,15 +89,13 @@ def get_index():
 
 def synonym_replacement(text):
     words = text.split()
-    new_words = []
-    for word in words:
-        synonyms = wordnet.synsets(word)
+    for _ in range(10):
+        word_to_replace = random.choice(words)
+        synonyms = wordnet.synsets(word_to_replace)
         if synonyms:
             synonym = synonyms[0].lemmas()[0].name()
-            new_words.append(synonym)
-        else:
-            new_words.append(word)
-    return " ".join(new_words)
+            words = [synonym if word == word_to_replace else word for word in words]
+    return " ".join(words)
 
 def random_insertion(text):
     # Dummy implementation for random insertion
