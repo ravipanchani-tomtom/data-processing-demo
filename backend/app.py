@@ -89,6 +89,8 @@ def augment_text(request: TextRequest):
         processed_text = synonym_replacement(request.text)
     elif request.dataset == "random_insertion":
         processed_text = random_insertion(request.text)
+    elif request.dataset == "random_deletion":
+        processed_text = random_deletion(request.text)
     else:
         raise HTTPException(status_code=400, detail="Invalid augmentation option")
     return TextResponse(original_text=request.text, processed_text=processed_text)
@@ -116,8 +118,34 @@ def synonym_replacement(text):
             new_words.append(word)
     return " ".join(new_words)
 
-def random_insertion(text):
-    # Dummy implementation for random insertion
+def random_insertion(text, n=1):
     words = text.split()
-    words.insert(len(words) // 2, "random")
+    for _ in range(n):
+        add_word(words)
     return " ".join(words)
+
+def add_word(words):
+    synonyms = []
+    counter = 0
+    while len(synonyms) < 1:
+        random_word = words[random.randint(0, len(words)-1)]
+        synonyms = wordnet.synsets(random_word)
+        counter += 1
+        if counter > 10:
+            return
+    synonym = synonyms[0].lemmas()[0].name()
+    random_idx = random.randint(0, len(words)-1)
+    words.insert(random_idx, synonym)
+
+def random_deletion(text, p=0.2):
+    words = text.split()
+    if len(words) == 1:
+        return words
+    new_words = []
+    for word in words:
+        r = random.uniform(0, 1)
+        if r > p:
+            new_words.append(word)
+    if len(new_words) == 0:
+        return words[random.randint(0, len(words)-1)]
+    return " ".join(new_words)

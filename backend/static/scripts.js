@@ -97,3 +97,7 @@ function synonymReplacement() {
 function randomInsertion() {
     augmentText("random_insertion");
 }
+
+function randomDeletion() {
+    augmentText("random_deletion");
+}
